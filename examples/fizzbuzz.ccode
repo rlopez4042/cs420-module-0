@@ -1,0 +1,10 @@
+count i from 1 to 15
+    when i mod 15 is 0
+        print FizzBuzz
+    when i mod 3 is 0
+        print Fizz
+    when i mod 5 is 0
+        print Buzz
+    else
+        print i
+end
