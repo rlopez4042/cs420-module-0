@@ -326,6 +326,28 @@ def execute_lines(lines: list[str], variables: dict[str, int] | None = None) -> 
 
             i = block_end + 1
 
+        # fizzbuzz command
+        elif line.startswith("fizzbuzz "):
+            parts = line.split()
+
+            if len(parts) != 4 or parts[2] != "to":
+                raise ValueError(f"Invalid fizzbuzz syntax: {line}")
+
+            start = int(parts[1])
+            end = int(parts[3])
+
+            for number in range(start, end + 1):
+                if number % 15 == 0:
+                    print("FizzBuzz")
+                elif number % 3 == 0:
+                    print("Fizz")
+                elif number % 5 == 0:
+                    print("Buzz")
+                else:
+                    print(number)
+
+            i += 1
+
         elif line.startswith("when "):
             i = execute_when_chain(lines, i, variables)
 
