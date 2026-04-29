@@ -181,6 +181,47 @@ def get_value(token: str, variables: dict[str, int]) -> int:
 
     return int(token)
 
+def eval_expression(expr: str, variables: dict[str, int]) -> int:
+    """
+    Evaluate simple arithmetic expressions.
+
+    Important:
+        requires spaces between values and operators.
+        Example: x + 2 works, but x+2 does not.
+    """
+
+    parts = expr.split()
+
+    # Single value, like:
+    # 5
+    # x
+    if len(parts) == 1:
+        return get_value(parts[0], variables)
+
+    # Simple binary expression, like:
+    # x + 2
+    # i mod 3
+    if len(parts) == 3:
+        left = get_value(parts[0], variables)
+        operator = parts[1]
+        right = get_value(parts[2], variables)
+
+        if operator == "+":
+            return left + right
+        elif operator == "-":
+            return left - right
+        elif operator == "*":
+            return left * right
+        elif operator == "/":
+            return left // right
+        elif operator == "mod":
+            return left % right
+        else:
+            raise ValueError(f"Unknown operator: {operator}")
+
+    raise ValueError(f"Invalid expression: {expr}")
+
+
 
 def condition_is_true(line: str, variables: dict[str, int]) -> bool:
     """
@@ -302,6 +343,19 @@ def execute_lines(lines: list[str], variables: dict[str, int] | None = None) -> 
                 print(variables[message])
             else:
                 print(message)
+
+            i += 1
+
+        elif line.startswith("set "):
+            parts = line.split()
+
+            if len(parts) < 4 or parts[2] != "to":
+                raise ValueError(f"Invalid set syntax: {line}")
+
+            variable_name = parts[1]
+            expression = " ".join(parts[3:])
+
+            variables[variable_name] = eval_expression(expression, variables)
 
             i += 1
 
