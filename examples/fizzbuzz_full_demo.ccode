@@ -1,0 +1,17 @@
+print FizzBuzz Full Demo Start
+fizzbuzz 1 to 15
+print Manual Mod Demo
+count number from 1 to 6
+when number mod 2 is 0
+print Even
+else
+print Odd
+end
+end
+set final to 30
+when final is 30
+print Final Is Thirty
+else
+print Final Is Not Thirty
+end
+print FizzBuzz Full Demo End

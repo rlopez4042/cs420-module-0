@@ -1,0 +1,34 @@
+print CryptCode Repeat and Conditions Demo
+
+set score to 85
+set lives to 2
+
+when score greater 70
+print Passed
+else
+print Failed
+end
+
+when lives less 3
+print Low lives
+else
+print Lives are okay
+end
+
+when score is not 100
+print Score is not perfect
+else
+print Perfect score
+end
+
+repeat 3
+print Repeat works
+end
+
+count i from 1 to 5
+when i mod 2 is 0
+print Even
+else
+print Odd
+end
+end

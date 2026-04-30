@@ -1,0 +1,14 @@
+print Math Demo Start
+set total to 10
+print total
+set total to total + 5
+print total
+set total to total - 3
+print total
+set total to total * 2
+print total
+set total to total / 4
+print total
+set remainder to total mod 3
+print remainder
+print Math Demo End

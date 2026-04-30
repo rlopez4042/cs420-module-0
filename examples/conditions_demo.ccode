@@ -1,0 +1,19 @@
+print Conditions Demo Start
+set score to 85
+set lives to 2
+when score greater 70
+print Passed
+else
+print Failed
+end
+when lives less 3
+print Low Lives
+else
+print Lives Okay
+end
+when score is not 100
+print Not Perfect
+else
+print Perfect
+end
+print Conditions Demo End

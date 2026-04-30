@@ -1,72 +1,54 @@
 import sys
 
-# ------- Caesar encrypt and decrypt -------
+from algorithms.caesar.caesar_decryption import caesar_decrypt
+from algorithms.caesar.caesar_encryption import caesar_encrypt
+from algorithms.reverse.reverse_decryption import reverse_decrypt
+from algorithms.reverse.reverse_encryption import reverse_encrypt
+from algorithms.addx.addx_decryption import addx_decrypt
+from algorithms.addx.addx_encryption import addx_encrypt
 
-# Decrypt Caesar shift +1 by shifting each letter back by 1.
-def caesar_decrypt(text: str) -> str:
-    result = ""
-
-    for char in text:
-        if "a" <= char <= "z":
-            result += chr((ord(char) - ord("a") - 1) % 26 + ord("a"))
-        elif "A" <= char <= "Z":
-            result += chr((ord(char) - ord("A") - 1) % 26 + ord("A"))
-        else:
-            result += char
-    return result
-
-# Encrypt Caesar shift +1 by shifting each letter forward by 1.
-def caesar_encrypt(text: str) -> str:
-    result = ""
-    for char in text:
-        if "a" <= char <= "z":
-            result += chr((ord(char) - ord("a") + 1) % 26 + ord("a"))
-        elif "A" <= char <= "Z":
-            result += chr((ord(char) - ord("A") + 1) % 26 + ord("A"))
-        else:
-            result += char
-    return result
-
-# ------- reverse words, works for encyption and decryption -------
-
-# Reverse text. Same function works for encryption and decryption.
-def reverse_text(text: str) -> str:
-    return text[::-1]
-
-# ------- x encrypt and decrypt -------
-
-# Decrypt by removing all lowercase x characters.
-def remove_x_decrypt(text: str) -> str:
-    return text.replace("x", "")
-
-# Encrypt by adding x after every character.
-def add_x_encrypt(text: str) -> str:
-    result = ""
-
-    for char in text:
-        result += char + "x"
-
-    return result
-
-
+# =================================== Algorithms ===================================
 # Add new algorithms here.
-# Each number must exist in BOTH dictionaries.
-DECRYPTORS = {
-    "1": caesar_decrypt,
-    "2": reverse_text,
-    "3": remove_x_decrypt,
-}
+# Each number must exist in both dictionaries.
 
 ENCRYPTORS = {
     "1": caesar_encrypt,
-    "2": reverse_text,
-    "3": add_x_encrypt,
+    "2": reverse_encrypt,
+    "3": addx_encrypt,
 }
 
-# ============================================================
-# FILE ENCRYPTION
-# ============================================================
-def encrypt_file(input_path: str, output_path: str, key_numbers: list[str]) -> None:
+DECRYPTORS = {
+    "1": caesar_decrypt,
+    "2": reverse_decrypt,
+    "3": addx_decrypt,
+}
+
+# =================================== Public/Private Key Loader ===================================
+    
+def load_key_value(key_path: str) -> int:
+    with open(key_path, "r", encoding="utf-8") as file:
+        key_text = file.read().strip()
+
+    if not key_text.isdigit():
+        raise ValueError("Key file must contain a number.")
+
+    return int(key_text)
+
+def validate_key_pair(public_key: int, private_key: int) -> None:
+    if public_key == private_key:
+        raise ValueError("Public and private keys must be different.")
+
+    if (public_key + private_key) % 26 != 0:
+        raise ValueError(
+            "Invalid key pair. For Caesar, public_key + private_key must equal 26."
+        )
+
+# =================================== File Encryption ===================================
+
+def encrypt_file(input_path: str, output_path: str, key_numbers: list[str], public_key_path: str = "keys/public.key") -> None:
+    public_key = load_key_value(public_key_path)
+    private_key = load_key_value("keys/private.key")
+    validate_key_pair(public_key, private_key)
 
     with open(input_path, "r", encoding="utf-8") as file:
         plain_lines = [line.rstrip("\n") for line in file]
@@ -94,7 +76,11 @@ def encrypt_file(input_path: str, output_path: str, key_numbers: list[str]) -> N
         if key not in ENCRYPTORS:
             raise ValueError(f"Unknown encryptor key: {key}")
 
-        encrypted_line = ENCRYPTORS[key](line)
+        if key == "1":
+            encrypted_line = ENCRYPTORS[key](line, public_key)
+        else:
+            encrypted_line = ENCRYPTORS[key](line)
+
         encrypted_lines.append(encrypted_line)
         key_index += 1
 
@@ -105,17 +91,18 @@ def encrypt_file(input_path: str, output_path: str, key_numbers: list[str]) -> N
 
     print(f"Encrypted file created: {output_path}")
 
+# =================================== File Decryption ===================================
 
-# ============================================================
-# FILE DECRYPTION
-# ============================================================
-def load_and_decrypt_program(path: str) -> list[str]:
+def load_and_decrypt_program(path: str, private_key_path: str = "keys/private.key") -> list[str]:
+    public_key = load_key_value("keys/public.key")
+    private_key = load_key_value(private_key_path)
+    validate_key_pair(public_key, private_key)
 
     with open(path, "r", encoding="utf-8") as file:
         all_lines = [line.rstrip("\n") for line in file]
 
     if not all_lines or not all_lines[0].startswith("Key:"):
-        raise ValueError("Cryptcode programs must start with 'Key:'")
+        raise ValueError("CryptCode programs must start with 'Key:'")
 
     keys = all_lines[0].replace("Key:", "").strip().split()
     encrypted_lines = all_lines[1:]
@@ -138,24 +125,30 @@ def load_and_decrypt_program(path: str) -> list[str]:
         if key not in DECRYPTORS:
             raise ValueError(f"Unknown decryptor key: {key}")
 
-        decrypted_line = DECRYPTORS[key](line)
+        if key == "1":
+            decrypted_line = DECRYPTORS[key](line, private_key)
+        else:
+            decrypted_line = DECRYPTORS[key](line)
+
         decrypted_lines.append(decrypted_line)
         key_index += 1
 
     return decrypted_lines
 
+# =================================== Interpreter Utility Functions ===================================
 
-# ============================================================
-# INTERPRETER HELPERS
-# ============================================================
 def find_matching_end(lines: list[str], start_index: int) -> int:
     """
-    Find the matching 'end' for a block command like count.
+    Find the matching 'end' for a block command like count or repeat.
 
-    This lets Cryptcode support:
+    This lets CryptCode support:
 
         count i from 1 to 5
             print i
+        end
+
+        repeat 3
+            print Hello
         end
     """
 
@@ -164,7 +157,7 @@ def find_matching_end(lines: list[str], start_index: int) -> int:
     for index in range(start_index, len(lines)):
         line = lines[index].strip()
 
-        if line.startswith("count "):
+        if line.startswith("count ") or line.startswith("repeat ") or line.startswith("when "):
             depth += 1
         elif line == "end":
             if depth == 0:
@@ -172,7 +165,6 @@ def find_matching_end(lines: list[str], start_index: int) -> int:
             depth -= 1
 
     raise ValueError("Missing 'end'.")
-
 
 def get_value(token: str, variables: dict[str, int]) -> int:
     """Return a number directly, or look up a variable value."""
@@ -221,14 +213,15 @@ def eval_expression(expr: str, variables: dict[str, int]) -> int:
 
     raise ValueError(f"Invalid expression: {expr}")
 
-
-
 def condition_is_true(line: str, variables: dict[str, int]) -> bool:
     """
     Evaluate simple when conditions.
 
     Supported examples:
         when i is 3
+        when i is not 3
+        when i greater 3
+        when i less 10
         when i mod 3 is 0
     """
 
@@ -239,6 +232,21 @@ def condition_is_true(line: str, variables: dict[str, int]) -> bool:
         right = get_value(parts[3], variables)
         return left == right
 
+    if len(parts) == 5 and parts[2] == "is" and parts[3] == "not":
+        left = get_value(parts[1], variables)
+        right = get_value(parts[4], variables)
+        return left != right
+
+    if len(parts) == 4 and parts[2] == "greater":
+        left = get_value(parts[1], variables)
+        right = get_value(parts[3], variables)
+        return left > right
+
+    if len(parts) == 4 and parts[2] == "less":
+        left = get_value(parts[1], variables)
+        right = get_value(parts[3], variables)
+        return left < right
+
     if len(parts) == 6 and parts[2] == "mod" and parts[4] == "is":
         left = get_value(parts[1], variables)
         divisor = get_value(parts[3], variables)
@@ -247,8 +255,12 @@ def condition_is_true(line: str, variables: dict[str, int]) -> bool:
 
     raise ValueError(f"Invalid when condition: {line}")
 
-
-def execute_when_chain(lines: list[str], start_index: int, variables: dict[str, int]) -> int:
+def execute_when_chain(
+    lines: list[str],
+    start_index: int,
+    variables: dict[str, int],
+    line_offset: int = 0
+) -> int:
     """
     Execute a when / else chain.
 
@@ -277,7 +289,7 @@ def execute_when_chain(lines: list[str], start_index: int, variables: dict[str, 
                     break
                 i += 1
 
-            branches.append((condition, lines[block_start:i]))
+            branches.append((condition, lines[block_start:i], block_start))
 
         elif line == "else":
             block_start = i + 1
@@ -286,7 +298,7 @@ def execute_when_chain(lines: list[str], start_index: int, variables: dict[str, 
             while i < len(lines) and lines[i].strip() != "end":
                 i += 1
 
-            branches.append(("else", lines[block_start:i]))
+            branches.append(("else", lines[block_start:i], block_start))
 
         elif line == "end":
             break
@@ -294,20 +306,18 @@ def execute_when_chain(lines: list[str], start_index: int, variables: dict[str, 
         else:
             break
 
-    for condition, block in branches:
+    for condition, block, block_start in branches:
         if condition == "else" or condition_is_true(condition, variables):
-            execute_lines(block, variables)
+            execute_lines(block, variables, line_offset + block_start)
             break
 
     return i
 
+# =================================== Core Interpreter ===================================
 
-# ============================================================
-# PROGRAM EXECUTION
-# ============================================================
-def execute_lines(lines: list[str], variables: dict[str, int] | None = None) -> None:
+def execute_lines(lines: list[str], variables: dict[str, int] | None = None, line_offset: int = 0) -> None:
     """
-    Execute decrypted Cryptcode lines.
+    Execute decrypted CryptCode lines.
 
     Supported commands:
         print Hello
@@ -315,6 +325,10 @@ def execute_lines(lines: list[str], variables: dict[str, int] | None = None) -> 
 
         count i from 1 to 5
             print i
+        end
+
+        repeat 3
+            print Hello
         end
 
         when i mod 3 is 0
@@ -331,89 +345,114 @@ def execute_lines(lines: list[str], variables: dict[str, int] | None = None) -> 
 
     while i < len(lines):
         line = lines[i].strip()
+        current_line_number = line_offset + i + 1
 
-        if line == "":
-            i += 1
-            continue
+        try:
+            if line == "":
+                i += 1
+                continue
 
-        if line.startswith("print "):
-            message = line[len("print "):]
+            if line.startswith("print "):
+                message = line[len("print "):]
 
-            if message in variables:
-                print(variables[message])
-            else:
-                print(message)
-
-            i += 1
-
-        elif line.startswith("set "):
-            parts = line.split()
-
-            if len(parts) < 4 or parts[2] != "to":
-                raise ValueError(f"Invalid set syntax: {line}")
-
-            variable_name = parts[1]
-            expression = " ".join(parts[3:])
-
-            variables[variable_name] = eval_expression(expression, variables)
-
-            i += 1
-
-        elif line.startswith("count "):
-            parts = line.split()
-
-            if len(parts) != 6 or parts[2] != "from" or parts[4] != "to":
-                raise ValueError(f"Invalid count syntax: {line}")
-
-            variable_name = parts[1]
-            start = int(parts[3])
-            end = int(parts[5])
-
-            block_start = i + 1
-            block_end = find_matching_end(lines, block_start)
-
-            block = lines[block_start:block_end]
-
-            for value in range(start, end + 1):
-                variables[variable_name] = value
-                execute_lines(block, variables)
-
-            i = block_end + 1
-
-        # fizzbuzz command
-        elif line.startswith("fizzbuzz "):
-            parts = line.split()
-
-            if len(parts) != 4 or parts[2] != "to":
-                raise ValueError(f"Invalid fizzbuzz syntax: {line}")
-
-            start = int(parts[1])
-            end = int(parts[3])
-
-            for number in range(start, end + 1):
-                if number % 15 == 0:
-                    print("FizzBuzz")
-                elif number % 3 == 0:
-                    print("Fizz")
-                elif number % 5 == 0:
-                    print("Buzz")
+                if message in variables:
+                    print(variables[message])
                 else:
-                    print(number)
+                    print(message)
 
-            i += 1
+                i += 1
 
-        elif line.startswith("when "):
-            i = execute_when_chain(lines, i, variables)
+            elif line.startswith("set "):
+                parts = line.split()
 
-        elif line == "end":
-            i += 1
+                if len(parts) < 4 or parts[2] != "to":
+                    raise ValueError(f"Invalid set syntax: {line}")
 
-        else:
-            raise ValueError(f"Unknown Cryptcode command: {line}")
+                variable_name = parts[1]
+                expression = " ".join(parts[3:])
 
-# ============================================================
-# MAIN PROGRAM
-# ============================================================
+                variables[variable_name] = eval_expression(expression, variables)
+
+                i += 1
+
+            elif line.startswith("count "):
+                parts = line.split()
+
+                if len(parts) != 6 or parts[2] != "from" or parts[4] != "to":
+                    raise ValueError(f"Invalid count syntax: {line}")
+
+                variable_name = parts[1]
+                start = int(parts[3])
+                end = int(parts[5])
+
+                block_start = i + 1
+                block_end = find_matching_end(lines, block_start)
+
+                block = lines[block_start:block_end]
+
+                for value in range(start, end + 1):
+                    variables[variable_name] = value
+                    execute_lines(block, variables, line_offset + block_start)
+
+                i = block_end + 1
+
+            elif line.startswith("repeat "):
+                parts = line.split()
+
+                if len(parts) != 2:
+                    raise ValueError(f"Invalid repeat syntax: {line}")
+
+                repeat_count = get_value(parts[1], variables)
+
+                block_start = i + 1
+                block_end = find_matching_end(lines, block_start)
+
+                block = lines[block_start:block_end]
+
+                for _ in range(repeat_count):
+                    execute_lines(block, variables, line_offset + block_start)
+
+                i = block_end + 1
+
+            # fizzbuzz command
+            elif line.startswith("fizzbuzz "):
+                parts = line.split()
+
+                if len(parts) != 4 or parts[2] != "to":
+                    raise ValueError(f"Invalid fizzbuzz syntax: {line}")
+
+                start = int(parts[1])
+                end = int(parts[3])
+
+                for number in range(start, end + 1):
+                    if number % 15 == 0:
+                        print("FizzBuzz")
+                    elif number % 3 == 0:
+                        print("Fizz")
+                    elif number % 5 == 0:
+                        print("Buzz")
+                    else:
+                        print(number)
+
+                i += 1
+
+            elif line.startswith("when "):
+                i = execute_when_chain(lines, i, variables, line_offset)
+
+            elif line == "end":
+                i += 1
+
+            else:
+                raise ValueError(f"Unknown CryptCode command: {line}")
+
+        except ValueError as error:
+            if str(error).startswith("Line "):
+                raise
+
+            raise ValueError(f"Line {current_line_number}: {error}")
+        
+# =================================== Command Line Entry Point ===================================
+
 def main() -> None:
     args = sys.argv[1:]
 
@@ -437,7 +476,6 @@ def main() -> None:
         program_path = args[0]
         decrypted_lines = load_and_decrypt_program(program_path)
         execute_lines(decrypted_lines)
-
 
 if __name__ == "__main__":
     main()

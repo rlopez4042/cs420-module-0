@@ -1,0 +1,13 @@
+print Loop Repeat Demo Start
+set total to 0
+count i from 1 to 5
+print i
+set total to total + i
+end
+print total
+repeat 3
+print Repeat Works
+end
+set doubled to total * 2
+print doubled
+print Loop Repeat Demo End

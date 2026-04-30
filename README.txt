@@ -1,19 +1,104 @@
-Cryptcode Clean Version
+CryptCode Clean Version
 =======================
-Cryptcode is a language where programs are stored encrypted.
-The first non-empty line must be:
+CryptCode is a small interpreted programming language where programs are stored in an encrypted format.
+
+A plain source file uses the .ccode extension.
+An encrypted executable file uses the .crypt extension.
+
+Every encrypted .crypt file must start with:
 
 Key: <numbers>
 
-Each number chooses which decryptor to use for one encrypted line.
+Each number chooses which decryptor to use for one encrypted non-empty line.
 
-Supported plain Cryptcode commands
+Current algorithm keys
+----------------------
+1 = Caesar
+2 = Reverse
+3 = AddX
+
+CryptCode also uses public and private key files for the Caesar algorithm:
+
+keys/public.key
+keys/private.key
+
+The public key is used during encryption.
+The private key is used during decryption.
+
+For Caesar, the public and private keys must be different numbers that add up to 26.
+
+Example:
+
+public.key:
+3
+
+private.key:
+23
+
+This means encryption shifts letters forward by 3, and decryption shifts letters forward by 23 to wrap back to the original text.
+
+Supported plain CryptCode commands
 ----------------------------------
 print <message or variable>
+
+set <variable> to <number or expression>
+
 count <var> from <start> to <end>
-when <var> mod <number> is <number>
-else
+    <commands>
 end
+
+repeat <number>
+    <commands>
+end
+
+when <var> is <number>
+    <commands>
+else
+    <commands>
+end
+
+when <var> is not <number>
+    <commands>
+else
+    <commands>
+end
+
+when <var> greater <number>
+    <commands>
+else
+    <commands>
+end
+
+when <var> less <number>
+    <commands>
+else
+    <commands>
+end
+
+when <var> mod <number> is <number>
+    <commands>
+else
+    <commands>
+end
+
+fizzbuzz <start> to <end>
+
+Supported operators
+-------------------
++   addition
+-   subtraction
+*   multiplication
+/   integer division
+mod remainder
+
+Important:
+Expressions need spaces between values and operators.
+
+Works:
+set total to total + i
+
+Does not work:
+set total to total+i
 
 Run an encrypted program
 ------------------------
@@ -31,13 +116,19 @@ count i from 1 to 3
     print i
 end
 
-2. Encrypt it using one algorithm for every line:
+2. Make sure the key files exist:
+
+mkdir -p keys
+echo 3 > keys/public.key
+echo 23 > keys/private.key
+
+3. Encrypt it using one algorithm for every line:
 
 python3 cryptcode.py --encrypt examples/my_program.ccode examples/my_program.crypt 1
 
-3. Run it:
+4. Run it:
 
-python3 cryptcode.py my_program.crypt
+python3 cryptcode.py examples/my_program.crypt
 
 Use different algorithms on different lines
 ------------------------------------------
@@ -45,28 +136,66 @@ If your program has 4 non-empty lines, pass 4 keys:
 
 python3 cryptcode.py --encrypt examples/my_program.ccode examples/my_program.crypt 1 2 3 1
 
+The key count must match the number of non-empty lines in the program.
+
+Example programs
+----------------
+Encrypt and run hello world with Caesar:
+
+python3 cryptcode.py --encrypt examples/hello.ccode examples/hello.crypt 1
+python3 cryptcode.py examples/hello.crypt
+
+Encrypt and run hello world with Reverse:
+
+python3 cryptcode.py --encrypt examples/hello.ccode examples/hello_reverse.crypt 2
+python3 cryptcode.py examples/hello_reverse.crypt
+
+Encrypt and run hello world with AddX:
+
+python3 cryptcode.py --encrypt examples/hello.ccode examples/hello_addx.crypt 3
+python3 cryptcode.py examples/hello_addx.crypt
+
+Test public/private key behavior
+--------------------------------
+This should work:
+
+echo 3 > keys/public.key
+echo 23 > keys/private.key
+python3 cryptcode.py --encrypt examples/hello.ccode examples/hello.crypt 1
+python3 cryptcode.py examples/hello.crypt
+
+This should fail or decrypt incorrectly because the keys do not match:
+
+echo 3 > keys/public.key
+echo 1 > keys/private.key
+python3 cryptcode.py examples/hello.crypt
+
 Adding your own encryption
 --------------------------
-Open cryptcode.py and find the ENCRYPTION / DECRYPTION ALGORITHMS section.
-Add one encrypt function and one decrypt function.
-Then register them in ENCRYPTORS and DECRYPTORS with the same number.
+Each algorithm lives in the algorithms folder.
 
-ie 
+To add a new algorithm:
+1. Create a new folder inside algorithms.
+2. Add one encryption file.
+3. Add one decryption file.
+4. Import both functions in cryptcode.py.
+5. Register both functions in ENCRYPTORS and DECRYPTORS with the same number.
 
-DECRYPTORS = {
-    "1": caesar_decrypt,
-    "2": reverse_text,
-    "3": remove_x_decrypt,
-    "4": <--- Your new decryption
-}
+Example:
 
 ENCRYPTORS = {
     "1": caesar_encrypt,
-    "2": reverse_text,
-    "3": add_x_encrypt,
-    "4": <--- Your new encryption
+    "2": reverse_encrypt,
+    "3": addx_encrypt,
+    "4": your_new_encrypt,
+}
+
+DECRYPTORS = {
+    "1": caesar_decrypt,
+    "2": reverse_decrypt,
+    "3": addx_decrypt,
+    "4": your_new_decrypt,
 }
 
 Note:
-
-You can also just write a sample.crypt file manually. As long as you have the proper key designation and write the code with the encryption properly it should work
+You can also write a .crypt file manually. As long as the Key line matches the encryption used on each non-empty line, the interpreter can decrypt and run it.

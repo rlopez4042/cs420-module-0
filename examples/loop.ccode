@@ -1,4 +1,0 @@
-print Counting
-count i from 1 to 3
-    print i
-end
