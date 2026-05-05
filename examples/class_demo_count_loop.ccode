@@ -1,0 +1,5 @@
+print Count Loop Example
+count i from 1 to 5
+print i
+end
+print Counting finished

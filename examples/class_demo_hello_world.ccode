@@ -1,0 +1,3 @@
+print Hello from CryptCode
+print This is my custom encrypted programming language
+print The interpreter decrypts the file and runs the programpython3 cryptcode.py --encrypt examples/class_demo_repeat_message.ccode examples/class_demo_repeat_message.crypt 1

@@ -1,0 +1,11 @@
+print Variable Example
+set x to 10
+set y to 5
+set sum to x + y
+set difference to x - y
+set product to x * y
+print x
+print y
+print sum
+print difference
+print product

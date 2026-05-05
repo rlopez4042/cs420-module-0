@@ -1,0 +1,19 @@
+print FizzBuzz
+
+count number from 1 to 15
+
+when number mod 15 is 0
+print FizzBuzz
+else
+when number mod 3 is 0
+print Fizz
+else
+when number mod 5 is 0
+print Buzz
+else
+print number
+end
+end
+end
+
+end

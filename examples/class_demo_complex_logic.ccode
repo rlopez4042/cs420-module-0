@@ -1,0 +1,17 @@
+print Complex Program Example
+set total to 0
+
+count number from 1 to 10
+set total to total + number
+
+when number mod 2 is 0
+print even
+else
+print odd
+end
+
+print number
+end
+
+print Final total
+print total

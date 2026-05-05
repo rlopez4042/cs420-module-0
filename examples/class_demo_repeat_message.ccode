@@ -1,0 +1,5 @@
+print Repeat Example
+repeat 3
+print CryptCode can repeat instructions
+end
+print Repeat finished

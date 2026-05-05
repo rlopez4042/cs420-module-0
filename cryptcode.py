@@ -451,16 +451,36 @@ def execute_lines(lines: list[str], variables: dict[str, int] | None = None, lin
 
             raise ValueError(f"Line {current_line_number}: {error}")
         
+# =================================== Help ===================================
+        
+def print_help() -> None:
+    print("CryptCode Interpreter")
+    print()
+    print("Usage:")
+    print("  Run an encrypted program:")
+    print("    python3 cryptcode.py program.crypt")
+    print()
+    print("  Encrypt a .ccode file:")
+    print("    python3 cryptcode.py --encrypt input.ccode output.crypt key(s)")
+    print()
+    print("Examples:")
+    print("  python3 cryptcode.py examples/class_demo_hello_world.crypt")
+    print("  python3 cryptcode.py --encrypt examples/class_demo_hello_world.ccode examples/class_demo_hello_world.crypt 1")
+    print("  python3 cryptcode.py --encrypt examples/class_demo_complex_logic.ccode examples/class_demo_complex_logic.crypt 1 2 3 1 2 3")
+    print()
+    print("Encryption keys:")
+    print("  1 = Caesar encryption")
+    print("  2 = Reverse line encryption")
+    print("  3 = AddX encryption")
+        
 # =================================== Command Line Entry Point ===================================
 
 def main() -> None:
     args = sys.argv[1:]
 
-    if not args:
-        print("Usage:")
-        print("  python3 cryptcode.py program.crypt")
-        print("  python3 cryptcode.py --encrypt input.ccode output.crypt 1 [2 3 ...]")
-        sys.exit(1)
+    if not args or args[0] in ["--help", "-h"]:
+        print_help()
+        sys.exit(0)
 
     if args[0] == "--encrypt":
         if len(args) < 4:
@@ -476,6 +496,7 @@ def main() -> None:
         program_path = args[0]
         decrypted_lines = load_and_decrypt_program(program_path)
         execute_lines(decrypted_lines)
+
 
 if __name__ == "__main__":
     main()
